@@ -279,7 +279,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # ==================== ADMIN / SETUP ====================
-@crimes_router.post("/setup/load-data")
+@crimes_router.get("/setup/load-data")
 async def load_sample_data(db: Session = Depends(get_db)):
     """Load sample crime data for demo/testing"""
     try:
