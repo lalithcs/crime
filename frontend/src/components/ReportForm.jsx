@@ -1,0 +1,177 @@
+import React, { useState } from 'react';
+import { reportsAPI } from '../services/api';
+import toast from 'react-hot-toast';
+import { X, MapPin, Camera } from 'lucide-react';
+import './ReportForm.css';
+
+function ReportForm({ onClose }) {
+  const [formData, setFormData] = useState({
+    user_id: 'user_' + Math.random().toString(36).substr(2, 9),
+    crime_type: '',
+    description: '',
+    latitude: 41.8781,
+    longitude: -87.6298,
+    location_description: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const crimeTypes = [
+    'THEFT',
+    'BATTERY',
+    'ASSAULT',
+    'BURGLARY',
+    'ROBBERY',
+    'VANDALISM',
+    'MOTOR VEHICLE THEFT',
+    'NARCOTICS',
+    'WEAPONS VIOLATION',
+    'OTHER',
+  ];
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleLocationClick = () => {
+    if (navigator.geolocation) {
+      toast.loading('Getting your location...');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          toast.dismiss();
+          setFormData({
+            ...formData,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          toast.success('Location updated!');
+        },
+        (error) => {
+          toast.dismiss();
+          toast.error('Could not get location');
+        }
+      );
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.crime_type || !formData.description) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await reportsAPI.createReport(formData);
+      toast.success('Crime report submitted successfully!');
+      onClose();
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      toast.error('Failed to submit report');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Report a Crime</h2>
+          <button className="close-btn" onClick={onClose}>
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="report-form">
+          <div className="form-group">
+            <label>Crime Type *</label>
+            <select
+              name="crime_type"
+              value={formData.crime_type}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select a crime type</option>
+              {crimeTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Description *</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Describe what happened..."
+              rows={4}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Location Description</label>
+            <input
+              type="text"
+              name="location_description"
+              value={formData.location_description}
+              onChange={handleChange}
+              placeholder="e.g., Street corner, Park, Store"
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Latitude</label>
+              <input
+                type="number"
+                name="latitude"
+                value={formData.latitude}
+                onChange={handleChange}
+                step="0.000001"
+              />
+            </div>
+            <div className="form-group">
+              <label>Longitude</label>
+              <input
+                type="number"
+                name="longitude"
+                value={formData.longitude}
+                onChange={handleChange}
+                step="0.000001"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="location-btn"
+            onClick={handleLocationClick}
+          >
+            <MapPin size={18} />
+            Use My Current Location
+          </button>
+
+          <div className="form-actions">
+            <button type="button" onClick={onClose} className="btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? 'Submitting...' : 'Submit Report'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default ReportForm;
