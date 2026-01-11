@@ -276,3 +276,15 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_json({"type": "pong", "data": "Connection alive"})
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+# ==================== ADMIN / SETUP ====================
+@crimes_router.post("/setup/load-data")
+async def load_sample_data(db: Session = Depends(get_db)):
+    """Load sample crime data for demo/testing"""
+    try:
+        from app.scripts.ingest_data import generate_synthetic_data
+        count = generate_synthetic_data(db, num_records=1000)
+        return {"status": "success", "message": f"Loaded {count} crime records"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load data: {str(e)}")
