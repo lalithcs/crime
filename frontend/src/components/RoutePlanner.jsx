@@ -9,10 +9,10 @@ function RoutePlanner() {
   const [routeData, setRouteData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    start_lat: 41.8781,
-    start_lng: -87.6298,
-    end_lat: 41.9,
-    end_lng: -87.65,
+    start_lat: 17.385,  // Hyderabad - Hitech City
+    start_lng: 78.486,
+    end_lat: 17.445,    // Hyderabad - Madhapur
+    end_lng: 78.380,
     avoid_crime_radius_km: 0.5,
   });
   const [showComparison, setShowComparison] = useState(false);

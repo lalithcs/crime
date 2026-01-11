@@ -92,7 +92,7 @@ function CrimeMap() {
     crimeType: '',
     days: 30,
   });
-  const [center] = useState([41.8781, -87.6298]); // Chicago
+  const [center] = useState([17.385, 78.486]); // Hyderabad, India
 
   useEffect(() => {
     loadData();
