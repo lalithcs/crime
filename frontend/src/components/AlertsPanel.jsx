@@ -1,26 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { alertsAPI } from '../services/api';
-import { AlertTriangle, X, Bell } from 'lucide-react';
+import { alertsAPI, reportsAPI } from '../services/api';
+import { AlertTriangle, X, Bell, MapPin } from 'lucide-react';
 import './AlertsPanel.css';
 
 function AlertsPanel() {
   const [alerts, setAlerts] = useState([]);
+  const [recentReports, setRecentReports] = useState([]);
   const [visible, setVisible] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('alerts'); // 'alerts' or 'reports'
 
   useEffect(() => {
-    loadAlerts();
-    // Refresh alerts every 30 seconds
-    const interval = setInterval(loadAlerts, 30000);
+    loadData();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const loadAlerts = async () => {
+  const loadData = async () => {
     try {
-      const response = await alertsAPI.getAlerts({ active_only: true });
-      setAlerts(response.data || []);
+      const [alertsRes, reportsRes] = await Promise.all([
+        alertsAPI.getAlerts({ active_only: true }),
+        reportsAPI.getReports({ limit: 10 }) // Get last 10 reports
+      ]);
+      setAlerts(alertsRes.data || []);
+      setRecentReports(reportsRes.data || []);
     } catch (error) {
-      console.error('Error loading alerts:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -43,7 +49,9 @@ function AlertsPanel() {
     return (
       <button className="alerts-toggle" onClick={() => setVisible(true)}>
         <Bell size={20} />
-        {alerts.length > 0 && <span className="alert-badge">{alerts.length}</span>}
+        {(alerts.length + recentReports.length) > 0 && (
+          <span className="alert-badge">{alerts.length + recentReports.length}</span>
+        )}
       </button>
     );
   }
@@ -53,24 +61,47 @@ function AlertsPanel() {
       <div className="alerts-header">
         <div className="header-left">
           <AlertTriangle size={20} />
-          <h4>Active Alerts</h4>
-          {alerts.length > 0 && <span className="count">{alerts.length}</span>}
+          <h4>Live Updates</h4>
+          {(alerts.length + recentReports.length) > 0 && (
+            <span className="count">{alerts.length + recentReports.length}</span>
+          )}
         </div>
         <button className="minimize-btn" onClick={() => setVisible(false)}>
           <X size={18} />
         </button>
       </div>
 
+      <div className="alerts-tabs">
+        <button 
+          className={`tab ${activeTab === 'alerts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('alerts')}
+        >
+          Alerts ({alerts.length})
+        </button>
+        <button 
+          className={`tab ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          Recent Reports ({recentReports.length})
+        </button>
+      </div>
+
       <div className="alerts-content">
-        {loading && <div className="loading-alerts">Loading alerts...</div>}
+        {loading && <div className="loading-alerts">Loading...</div>}
         
-        {!loading && alerts.length === 0 && (
+        {!loading && activeTab === 'alerts' && alerts.length === 0 && (
           <div className="no-alerts">
             <p>No active alerts at this time</p>
           </div>
         )}
 
-        {!loading && alerts.length > 0 && (
+        {!loading && activeTab === 'reports' && recentReports.length === 0 && (
+          <div className="no-alerts">
+            <p>No recent reports</p>
+          </div>
+        )}
+
+        {!loading && activeTab === 'alerts' && alerts.length > 0 && (
           <div className="alerts-list">
             {alerts.map((alert) => (
               <div key={alert.id} className={`alert-item ${getSeverityClass(alert.severity)}`}>
@@ -89,6 +120,27 @@ function AlertsPanel() {
                 )}
                 <p className="alert-time">
                   {new Date(alert.created_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && activeTab === 'reports' && recentReports.length > 0 && (
+          <div className="alerts-list">
+            {recentReports.map((report) => (
+              <div key={report.id} className="alert-item report-item">
+                <div className="alert-header-item">
+                  <MapPin size={16} className="report-icon" />
+                  <span className="report-type">{report.crime_type}</span>
+                  <span className={`status-badge ${report.status}`}>{report.status}</span>
+                </div>
+                <p className="report-desc">{report.description}</p>
+                <p className="alert-location">
+                  📍 {report.location_description || `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                </p>
+                <p className="alert-time">
+                  Reported: {new Date(report.reported_at).toLocaleString()}
                 </p>
               </div>
             ))}

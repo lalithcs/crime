@@ -2,14 +2,43 @@
   position: fixed;
   top: 5rem;
   right: 1rem;
-  width: 350px;
-  max-height: 500px;
+  width: 380px;
+  max-height: 600px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   z-index: 999;
   display: flex;
   flex-direction: column;
+}
+
+.alerts-tabs {
+  display: flex;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 0 1rem;
+}
+
+.alerts-tabs .tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  color: #718096;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.alerts-tabs .tab:hover {
+  color: #2d3748;
+  background: #f7fafc;
+}
+
+.alerts-tabs .tab.active {
+  color: #e53e3e;
+  border-bottom-color: #e53e3e;
 }
 
 .alerts-toggle {
