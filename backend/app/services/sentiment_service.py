@@ -1,21 +1,21 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
-from transformers import pipeline
-import torch
 
 from app.models import crime, schemas
 
 
-# Initialize sentiment analysis pipeline (using lightweight model)
+# Try to import transformers, but fallback to keyword-based analysis if not available
 try:
+    from transformers import pipeline
+    import torch
     sentiment_analyzer = pipeline(
         "sentiment-analysis",
         model="distilbert-base-uncased-finetuned-sst-2-english",
         device=0 if torch.cuda.is_available() else -1
     )
 except Exception as e:
-    print(f"Warning: Could not load sentiment model: {e}")
+    print(f"Warning: Could not load sentiment model (memory constraints): {e}")
     sentiment_analyzer = None
 
 

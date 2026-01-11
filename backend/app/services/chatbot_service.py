@@ -113,7 +113,7 @@ async def _handle_prediction_query(db: Session, message: str) -> dict:
     
     return {
         "predictions": prediction.predictions,
-        "accuracy": prediction.model_accuracy
+        "accuracy": prediction.accuracy
     }
 
 

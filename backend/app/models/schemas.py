@@ -69,8 +69,10 @@ class PredictionRequest(BaseModel):
 class PredictionResponse(BaseModel):
     predictions: List[dict]
     confidence_interval: dict
-    model_accuracy: float
+    accuracy: float
     forecast_period: str
+    
+    model_config = {"protected_namespaces": ()}
 
 
 class SafeRouteRequest(BaseModel):

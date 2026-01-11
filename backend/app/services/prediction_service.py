@@ -92,7 +92,7 @@ async def predict_crimes(db: Session, request: schemas.PredictionRequest) -> sch
                 "lower": [p["lower_bound"] for p in predictions],
                 "upper": [p["upper_bound"] for p in predictions]
             },
-            model_accuracy=round(accuracy, 2),
+            accuracy=round(accuracy, 2),
             forecast_period=f"{request.days_ahead} days"
         )
     
@@ -117,7 +117,7 @@ def _simple_prediction(crimes_data: List, days_ahead: int) -> schemas.Prediction
         return schemas.PredictionResponse(
             predictions=predictions,
             confidence_interval={"lower": [0]*days_ahead, "upper": [0]*days_ahead},
-            model_accuracy=0.0,
+            accuracy=0.0,
             forecast_period=f"{days_ahead} days"
         )
     
@@ -141,7 +141,7 @@ def _simple_prediction(crimes_data: List, days_ahead: int) -> schemas.Prediction
             "lower": [p["lower_bound"] for p in predictions],
             "upper": [p["upper_bound"] for p in predictions]
         },
-        model_accuracy=50.0,
+        accuracy=50.0,
         forecast_period=f"{days_ahead} days (simple average)"
     )
 
