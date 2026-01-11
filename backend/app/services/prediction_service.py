@@ -148,6 +148,8 @@ def _simple_prediction(crimes_data: List, days_ahead: int) -> schemas.Prediction
 
 async def get_hotspots(db: Session, days_ahead: int = 7) -> dict:
     """Get predicted crime hotspots using clustering"""
+    from app.services.geocoding_service import get_area_name
+    
     # Get recent crimes
     start_date = datetime.utcnow() - timedelta(days=90)
     crimes_data = db.query(crime.Crime).filter(
@@ -167,10 +169,11 @@ async def get_hotspots(db: Session, days_ahead: int = 7) -> dict:
         grid_lng = round(c.longitude / grid_size) * grid_size
         grid_counts[(grid_lat, grid_lng)] += 1
     
-    # Get top hotspots
+    # Get top hotspots with area names
     sorted_grids = sorted(grid_counts.items(), key=lambda x: x[1], reverse=True)
     hotspots = [
         {
+            "area": get_area_name(lat, lng),
             "latitude": lat,
             "longitude": lng,
             "crime_count": count,

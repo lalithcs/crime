@@ -45,11 +45,15 @@ function WebSocketHandler({ onNewReport }) {
 
   useEffect(() => {
     // Connect to WebSocket for real-time updates
-    const ws = new WebSocket('ws://localhost:8000/ws/live');
+    const wsUrl = process.env.REACT_APP_API_URL 
+      ? process.env.REACT_APP_API_URL.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws/live'
+      : 'ws://localhost:8000/ws/live';
+    
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log('WebSocket connected to:', wsUrl);
     };
 
     ws.onmessage = (event) => {

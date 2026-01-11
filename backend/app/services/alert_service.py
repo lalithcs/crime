@@ -1,9 +1,15 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional, List
+import os
 
 from app.models import crime
 from app.services.crime_service import haversine_distance
+from app.services.geocoding_service import get_area_name
+from app.services.notification_service import notification_service
+
+# Default notification recipient (can be configured via env variable)
+DEFAULT_ALERT_EMAIL = os.getenv("ALERT_RECIPIENT_EMAIL", "admin@example.com")
 
 
 def get_alerts(
@@ -48,7 +54,8 @@ def create_alert(
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
     radius_km: float = 1.0,
-    expires_in_hours: Optional[int] = None
+    expires_in_hours: Optional[int] = None,
+    send_notification: bool = True
 ) -> crime.Alert:
     """Create a new community alert"""
     expires_at = None
@@ -70,6 +77,16 @@ def create_alert(
     db.add(alert)
     db.commit()
     db.refresh(alert)
+    
+    # Send notification if enabled
+    if send_notification:
+        location = get_area_name(latitude, longitude) if latitude and longitude else "Multiple Areas"
+        notification_service.send_email_alert(
+            recipient_email=DEFAULT_ALERT_EMAIL,
+            alert_title=title,
+            alert_message=message,
+            location=location
+        )
     
     return alert
 

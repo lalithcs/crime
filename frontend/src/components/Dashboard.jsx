@@ -141,7 +141,9 @@ function Dashboard() {
             <tbody>
               {hotspots.slice(0, 10).map((hotspot, idx) => (
                 <tr key={idx}>
-                  <td>{hotspot.latitude.toFixed(4)}, {hotspot.longitude.toFixed(4)}</td>
+                  <td>
+                    <strong>{hotspot.area || `${hotspot.latitude.toFixed(4)}, ${hotspot.longitude.toFixed(4)}`}</strong>
+                  </td>
                   <td>{hotspot.crime_count}</td>
                   <td>+{hotspot.predicted_increase}</td>
                   <td>
