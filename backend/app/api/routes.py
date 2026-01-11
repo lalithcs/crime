@@ -283,8 +283,39 @@ async def websocket_endpoint(websocket: WebSocket):
 async def load_sample_data(db: Session = Depends(get_db)):
     """Load sample crime data for demo/testing"""
     try:
-        from app.scripts.ingest_data import generate_synthetic_data
-        count = generate_synthetic_data(db, num_records=1000)
+        import sys
+        import os
+        # Add backend directory to path
+        backend_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        sys.path.insert(0, backend_path)
+        
+        from scripts.ingest_data import generate_synthetic_data
+        
+        # Generate data directly in the database
+        count = 0
+        for record in generate_synthetic_data(1000):
+            try:
+                crime_obj = crime.Crime(
+                    case_id=record["id"],
+                    crime_type=record["primary_type"],
+                    description=record.get("description", ""),
+                    latitude=record["latitude"],
+                    longitude=record["longitude"],
+                    location_description=record.get("location_description", ""),
+                    occurred_at=record["date"] if isinstance(record["date"], datetime) else datetime.fromisoformat(record["date"].replace("Z", "+00:00")),
+                    arrest_made=record.get("arrest", False),
+                    domestic=record.get("domestic", False),
+                    district=record.get("district", ""),
+                    ward=record.get("ward"),
+                )
+                db.add(crime_obj)
+                count += 1
+            except Exception as e:
+                print(f"Error adding record: {e}")
+                continue
+        
+        db.commit()
         return {"status": "success", "message": f"Loaded {count} crime records"}
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to load data: {str(e)}")
