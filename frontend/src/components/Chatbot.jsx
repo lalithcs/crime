@@ -77,7 +77,6 @@ function Chatbot({ onClose }) {
     const userMessage = { type: 'user', text: faq.q, timestamp: new Date() };
     const botMessage = { type: 'bot', text: faq.a, timestamp: new Date() };
     setMessages((prev) => [...prev, userMessage, botMessage]);
-    setShowFAQ(false);
   };
 
   const handleKeyPress = (e) => {
