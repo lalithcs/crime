@@ -2,11 +2,16 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import httpx
 import json
+import os
 from math import radians, cos, sin, asin, sqrt
 from datetime import datetime, timedelta
 
 from app.models import crime, schemas
 from app.services.crime_service import haversine_distance
+
+# OpenRouteService API (free tier: 2000 requests/day)
+OPENROUTE_API_KEY = os.getenv("OPENROUTE_API_KEY", "5b3ce3597851110001cf62483bb58f34a1c34f92a7aea90fd38e4ce5")
+OPENROUTE_BASE_URL = "https://api.openrouteservice.org/v2/directions/driving-car"
 
 
 async def calculate_safe_route(db: Session, request: schemas.SafeRouteRequest) -> schemas.SafeRouteResponse:
@@ -58,12 +63,146 @@ async def _get_route_from_service(
     crime_zones: List[dict]
 ) -> Optional[schemas.SafeRouteResponse]:
     """
-    Get route from OpenRouteService API
-    Note: Requires API key - this is a simplified version
+    Get real road-based route from OpenRouteService API
     """
-    # This would connect to OpenRouteService or OSRM
-    # For now, returning None to use fallback
-    return None
+    try:
+        # Prepare coordinates [lng, lat] format (GeoJSON standard)
+        start_coords = [request.start_lng, request.start_lat]
+        end_coords = [request.end_lng, request.end_lat]
+        
+        # Build request payload
+        payload = {
+            "coordinates": [start_coords, end_coords],
+            "preference": "recommended",  # Balance speed and safety
+            "units": "km"
+        }
+        
+        # Add waypoints to avoid crime zones if needed
+        if crime_zones:
+            # Find significant crime hotspots
+            high_crime_areas = _cluster_crime_zones(crime_zones, request.avoid_crime_radius_km)
+            
+            # Add avoidance waypoints (max 5 to keep route practical)
+            if high_crime_areas and len(high_crime_areas) <= 5:
+                avoid_polygons = []
+                for zone in high_crime_areas:
+                    # Create circular avoidance area
+                    radius_meters = request.avoid_crime_radius_km * 1000
+                    avoid_polygons.append({
+                        "type": "Point",
+                        "coordinates": [zone["lng"], zone["lat"]],
+                        "radius": radius_meters
+                    })
+                
+                payload["options"] = {
+                    "avoid_polygons": avoid_polygons
+                }
+        
+        # Make API request
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                OPENROUTE_BASE_URL,
+                json=payload,
+                headers={
+                    "Authorization": OPENROUTE_API_KEY,
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if response.status_code != 200:
+                print(f"OpenRouteService error: {response.status_code} - {response.text}")
+                return None
+            
+            data = response.json()
+            
+            # Extract route information
+            route = data["routes"][0]
+            geometry = route["geometry"]
+            
+            # Decode polyline coordinates
+            coordinates = geometry["coordinates"]  # [lng, lat] pairs
+            route_points = [[coord[1], coord[0]] for coord in coordinates]  # Convert to [lat, lng]
+            
+            # Calculate safety score based on avoided zones
+            avoided_zones = len(high_crime_areas) if crime_zones else 0
+            base_safety = 70
+            safety_score = min(100, base_safety + (avoided_zones * 5))
+            
+            # Extract distance and duration
+            distance_km = route["summary"]["distance"] / 1000  # meters to km
+            duration_minutes = route["summary"]["duration"] / 60  # seconds to minutes
+            
+            return schemas.SafeRouteResponse(
+                route=route_points,
+                distance_km=round(distance_km, 2),
+                duration_minutes=round(duration_minutes, 1),
+                safety_score=round(safety_score, 1),
+                avoided_crime_zones=avoided_zones,
+                waypoints=[
+                    {
+                        "lat": request.start_lat,
+                        "lng": request.start_lng,
+                        "type": "start"
+                    },
+                    {
+                        "lat": request.end_lat,
+                        "lng": request.end_lng,
+                        "type": "end"
+                    }
+                ]
+            )
+            
+    except Exception as e:
+        print(f"Error fetching route from OpenRouteService: {e}")
+        return None
+
+
+def _cluster_crime_zones(crime_zones: List[dict], radius_km: float) -> List[dict]:
+    """
+    Cluster nearby crime zones into hotspots to avoid
+    Returns top crime clusters
+    """
+    if not crime_zones:
+        return []
+    
+    # Simple clustering: group crimes within radius
+    clusters = []
+    used_indices = set()
+    
+    for i, zone1 in enumerate(crime_zones):
+        if i in used_indices:
+            continue
+        
+        cluster = [zone1]
+        used_indices.add(i)
+        
+        for j, zone2 in enumerate(crime_zones):
+            if j in used_indices:
+                continue
+            
+            dist = haversine_distance(
+                zone1["lat"], zone1["lng"],
+                zone2["lat"], zone2["lng"]
+            )
+            
+            if dist <= radius_km:
+                cluster.append(zone2)
+                used_indices.add(j)
+        
+        # Only keep significant clusters (3+ crimes)
+        if len(cluster) >= 3:
+            # Calculate cluster center
+            avg_lat = sum(c["lat"] for c in cluster) / len(cluster)
+            avg_lng = sum(c["lng"] for c in cluster) / len(cluster)
+            clusters.append({
+                "lat": avg_lat,
+                "lng": avg_lng,
+                "crime_count": len(cluster)
+            })
+    
+    # Sort by crime count and return top 5
+    clusters.sort(key=lambda x: x["crime_count"], reverse=True)
+    return clusters[:5]
 
 
 def _calculate_simple_safe_route(
