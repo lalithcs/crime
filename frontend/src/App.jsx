@@ -5,9 +5,8 @@ import Dashboard from './components/Dashboard';
 import ReportForm from './components/ReportForm';
 import Chatbot from './components/Chatbot';
 import RoutePlanner from './components/RoutePlanner';
-import SentimentPanel from './components/SentimentPanel';
 import AlertsPanel from './components/AlertsPanel';
-import { Activity, Map, MessageSquare, Route, TrendingUp } from 'lucide-react';
+import { Activity, Map, MessageSquare, Route } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -60,13 +59,6 @@ function App() {
           <Route size={18} />
           Safe Routes
         </button>
-        <button
-          className={`nav-tab ${activeTab === 'sentiment' ? 'active' : ''}`}
-          onClick={() => setActiveTab('sentiment')}
-        >
-          <TrendingUp size={18} />
-          Sentiment
-        </button>
       </nav>
 
       {/* Main Content */}
@@ -74,7 +66,6 @@ function App() {
         {activeTab === 'map' && <CrimeMap />}
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'route' && <RoutePlanner />}
-        {activeTab === 'sentiment' && <SentimentPanel />}
       </main>
 
       {/* Floating Chatbot Button */}
