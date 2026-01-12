@@ -122,6 +122,14 @@ function Chatbot({ onClose }) {
             </div>
           )}
 
+          {!showFAQ && (
+            <div className="show-faq-container">
+              <button className="show-faq-btn" onClick={() => setShowFAQ(true)}>
+                📚 Show FAQs
+              </button>
+            </div>
+          )}
+
           {showFAQ && (
             <div className="faq-section-inline">
               <div className="faq-header">
