@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { X, MapPin, Camera } from 'lucide-react';
+import { ALL_LOCATIONS } from '../constants/locations';
 import './ReportForm.css';
 
 function ReportForm({ onClose }) {
+  const [selectedLocation, setSelectedLocation] = useState(ALL_LOCATIONS[0].name);
   const [formData, setFormData] = useState({
     user_id: 'user_' + Math.random().toString(36).substr(2, 9),
     crime_type: '',
     description: '',
-    latitude: 41.8781,
-    longitude: -87.6298,
-    location_description: '',
+    latitude: ALL_LOCATIONS[0].lat,
+    longitude: ALL_LOCATIONS[0].lng,
+    location_description: ALL_LOCATIONS[0].name,
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,18 +37,50 @@ function ReportForm({ onClose }) {
     });
   };
 
+  const handleLocationChange = (locationName) => {
+    const location = ALL_LOCATIONS.find(loc => loc.name === locationName);
+    if (location) {
+      setSelectedLocation(locationName);
+      setFormData({
+        ...formData,
+        latitude: location.lat,
+        longitude: location.lng,
+        location_description: location.name,
+      });
+    }
+  };
+
   const handleLocationClick = () => {
     if (navigator.geolocation) {
       toast.loading('Getting your location...');
       navigator.geolocation.getCurrentPosition(
         (position) => {
           toast.dismiss();
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          // Find nearest predefined location
+          let nearestLocation = ALL_LOCATIONS[0];
+          let minDistance = Infinity;
+          
+          ALL_LOCATIONS.forEach(loc => {
+            const distance = Math.sqrt(
+              Math.pow(loc.lat - lat, 2) + Math.pow(loc.lng - lng, 2)
+            );
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestLocation = loc;
+            }
+          });
+          
+          setSelectedLocation(nearestLocation.name);
           setFormData({
             ...formData,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
+            latitude: nearestLocation.lat,
+            longitude: nearestLocation.lng,
+            location_description: nearestLocation.name,
           });
-          toast.success('Location updated!');
+          toast.success(`Nearest location: ${nearestLocation.name}`);
         },
         (error) => {
           toast.dismiss();
@@ -128,27 +162,20 @@ function ReportForm({ onClose }) {
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Latitude</label>
-              <input
-                type="number"
-                name="latitude"
-                value={formData.latitude}
-                onChange={handleChange}
-                step="0.000001"
-              />
-            </div>
-            <div className="form-group">
-              <label>Longitude</label>
-              <input
-                type="number"
-                name="longitude"
-                value={formData.longitude}
-                onChange={handleChange}
-                step="0.000001"
-              />
-            </div>
+          <div className="form-group">
+            <label>Location *</label>
+            <select
+              className="location-select"
+              value={selectedLocation}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              required
+            >
+              {ALL_LOCATIONS.map((loc) => (
+                <option key={loc.name} value={loc.name}>
+                  {loc.name} {loc.city ? `(${loc.city})` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
@@ -157,7 +184,7 @@ function ReportForm({ onClose }) {
             onClick={handleLocationClick}
           >
             <MapPin size={18} />
-            Use My Current Location
+            Use My Current Location (Nearest Area)
           </button>
 
           <div className="form-actions">

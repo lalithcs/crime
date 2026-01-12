@@ -3,20 +3,44 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import { routesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { Navigation, MapPin, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { ALL_LOCATIONS } from '../constants/locations';
 import './RoutePlanner.css';
 
 function RoutePlanner() {
   const [routeData, setRouteData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedStartLocation, setSelectedStartLocation] = useState(ALL_LOCATIONS[2].name); // Hitech City
+  const [selectedEndLocation, setSelectedEndLocation] = useState(ALL_LOCATIONS[0].name); // Madhapur
   const [formData, setFormData] = useState({
-    start_lat: 17.385,  // Hyderabad - Hitech City
-    start_lng: 78.486,
-    end_lat: 17.445,    // Hyderabad - Madhapur
-    end_lng: 78.380,
+    start_lat: ALL_LOCATIONS[2].lat,
+    start_lng: ALL_LOCATIONS[2].lng,
+    end_lat: ALL_LOCATIONS[0].lat,
+    end_lng: ALL_LOCATIONS[0].lng,
     avoid_crime_radius_km: 0.5,
   });
   const [showComparison, setShowComparison] = useState(false);
   const [comparison, setComparison] = useState(null);
+
+  const handleLocationChange = (type, locationName) => {
+    const location = ALL_LOCATIONS.find(loc => loc.name === locationName);
+    if (location) {
+      if (type === 'start') {
+        setSelectedStartLocation(locationName);
+        setFormData({
+          ...formData,
+          start_lat: location.lat,
+          start_lng: location.lng,
+        });
+      } else {
+        setSelectedEndLocation(locationName);
+        setFormData({
+          ...formData,
+          end_lat: location.lat,
+          end_lng: location.lng,
+        });
+      }
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -58,20 +82,39 @@ function RoutePlanner() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          // Find nearest predefined location
+          let nearestLocation = ALL_LOCATIONS[0];
+          let minDistance = Infinity;
+          
+          ALL_LOCATIONS.forEach(loc => {
+            const distance = Math.sqrt(
+              Math.pow(loc.lat - lat, 2) + Math.pow(loc.lng - lng, 2)
+            );
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestLocation = loc;
+            }
+          });
+          
           if (field === 'start') {
+            setSelectedStartLocation(nearestLocation.name);
             setFormData({
               ...formData,
-              start_lat: position.coords.latitude,
-              start_lng: position.coords.longitude,
+              start_lat: nearestLocation.lat,
+              start_lng: nearestLocation.lng,
             });
           } else {
+            setSelectedEndLocation(nearestLocation.name);
             setFormData({
               ...formData,
-              end_lat: position.coords.latitude,
-              end_lng: position.coords.longitude,
+              end_lat: nearestLocation.lat,
+              end_lng: nearestLocation.lng,
             });
           }
-          toast.success('Location updated!');
+          toast.success(`Nearest location: ${nearestLocation.name}`);
         },
         (error) => {
           toast.error('Could not get location');
@@ -88,24 +131,17 @@ function RoutePlanner() {
         <div className="route-form">
           <div className="location-section">
             <h3>Start Location</h3>
-            <div className="coord-inputs">
-              <input
-                type="number"
-                name="start_lat"
-                value={formData.start_lat}
-                onChange={handleChange}
-                placeholder="Latitude"
-                step="0.000001"
-              />
-              <input
-                type="number"
-                name="start_lng"
-                value={formData.start_lng}
-                onChange={handleChange}
-                placeholder="Longitude"
-                step="0.000001"
-              />
-            </div>
+            <select
+              className="location-select"
+              value={selectedStartLocation}
+              onChange={(e) => handleLocationChange('start', e.target.value)}
+            >
+              {ALL_LOCATIONS.map((loc) => (
+                <option key={`start-${loc.name}`} value={loc.name}>
+                  {loc.name} {loc.city ? `(${loc.city})` : ''}
+                </option>
+              ))}
+            </select>
             <button
               className="loc-btn"
               onClick={() => handleUseCurrentLocation('start')}
@@ -116,24 +152,17 @@ function RoutePlanner() {
 
           <div className="location-section">
             <h3>Destination</h3>
-            <div className="coord-inputs">
-              <input
-                type="number"
-                name="end_lat"
-                value={formData.end_lat}
-                onChange={handleChange}
-                placeholder="Latitude"
-                step="0.000001"
-              />
-              <input
-                type="number"
-                name="end_lng"
-                value={formData.end_lng}
-                onChange={handleChange}
-                placeholder="Longitude"
-                step="0.000001"
-              />
-            </div>
+            <select
+              className="location-select"
+              value={selectedEndLocation}
+              onChange={(e) => handleLocationChange('end', e.target.value)}
+            >
+              {ALL_LOCATIONS.map((loc) => (
+                <option key={`end-${loc.name}`} value={loc.name}>
+                  {loc.name} {loc.city ? `(${loc.city})` : ''}
+                </option>
+              ))}
+            </select>
             <button
               className="loc-btn"
               onClick={() => handleUseCurrentLocation('end')}

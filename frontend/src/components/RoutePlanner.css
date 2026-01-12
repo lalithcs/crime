@@ -32,6 +32,27 @@
   margin: 0 0 0.75rem 0;
 }
 
+.location-select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.location-select:hover {
+  border-color: #cbd5e0;
+}
+
+.location-select:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
 .coord-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
