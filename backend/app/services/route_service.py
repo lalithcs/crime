@@ -10,7 +10,7 @@ from app.models import crime, schemas
 from app.services.crime_service import haversine_distance
 
 # OpenRouteService API (free tier: 2000 requests/day)
-OPENROUTE_API_KEY = os.getenv("OPENROUTE_API_KEY", "5b3ce3597851110001cf62483bb58f34a1c34f92a7aea90fd38e4ce5")
+OPENROUTE_API_KEY = os.getenv("OPENROUTE_API_KEY", "")
 OPENROUTE_BASE_URL = "https://api.openrouteservice.org/v2/directions/driving-car"
 
 # Alternative: Use OSRM (free, no API key needed)

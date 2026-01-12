@@ -12,10 +12,10 @@ import json
 import os
 
 # Twitter API Credentials (get from https://developer.twitter.com)
-TWITTER_API_KEY = os.getenv("TWITTER_API_KEY", "A8mvfL4EjnBnFUC8J7F8r2tX8")
-TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET", "Dxc1QAXwlJLGSc1WE3OgBr7XvGGUFgJdiS5cqoNFp6GDFj8sWf")
-TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN", "1942244397749538817-wXsmSkdVV0tRfuLu2BGrC5zCqgsU6r")
-TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET", "MRxsOvBSl8Z2ZGZDtsUnZrzqYB8AjzIbyGesYdQMNQWHm")
+TWITTER_API_KEY = os.getenv("TWITTER_API_KEY", "")
+TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET", "")
+TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN", "")
+TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET", "")
 
 # Hyderabad areas with coordinates
 HYDERABAD_AREAS = {
