@@ -34,7 +34,7 @@ class NotificationService:
                     <p>{alert_message}</p>
                     <hr>
                     <p style="color: #666; font-size: 12px;">
-                        This is an automated alert from Crime Safety Platform.
+                        This is an automated alert from CrimeScope.
                         Stay safe and be vigilant.
                     </p>
                 </body>

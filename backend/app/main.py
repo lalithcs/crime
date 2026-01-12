@@ -71,7 +71,7 @@ def auto_load_data_if_empty():
 async def lifespan(app: FastAPI):
     """Lifecycle manager for startup and shutdown events"""
     # Startup
-    logger.info("Starting Crime Safety Platform API")
+    logger.info("Starting CrimeScope API")
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables created/verified")
     
@@ -80,11 +80,11 @@ async def lifespan(app: FastAPI):
     
     yield
     # Shutdown
-    logger.info("Shutting down Crime Safety Platform API")
+    logger.info("Shutting down CrimeScope API")
 
 
 app = FastAPI(
-    title="Crime Prediction & Safety Platform API",
+    title="CrimeScope API",
     description="Real-time crime prediction, reporting, and safety routing",
     version="1.0.0",
     lifespan=lifespan

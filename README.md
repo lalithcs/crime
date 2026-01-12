@@ -1,4 +1,4 @@
-# Crime Prediction & Safety Platform
+# CrimeScope
 
 A comprehensive real-time crime prediction and safety platform with ML-powered forecasting, community alerts, and intelligent route planning.
 

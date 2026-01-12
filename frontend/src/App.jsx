@@ -23,7 +23,7 @@ function App() {
         <div className="header-content">
           <div className="logo">
             <Activity size={28} />
-            <h1>Crime Safety Platform</h1>
+            <h1>CrimeScope</h1>
           </div>
           <div className="header-actions">
             <button 
