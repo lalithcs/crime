@@ -1,0 +1,14 @@
+# Requirements for Local Twitter Analysis Tool
+
+# Twitter API
+tweepy==4.14.0
+
+# Sentiment Analysis
+textblob==0.17.1
+
+# Data Processing
+pandas==2.1.4
+
+# Optional: Advanced NLP (if you want better sentiment analysis)
+# transformers==4.36.2
+# torch==2.1.2
