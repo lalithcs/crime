@@ -13,6 +13,9 @@ from app.services.crime_service import haversine_distance
 OPENROUTE_API_KEY = os.getenv("OPENROUTE_API_KEY", "5b3ce3597851110001cf62483bb58f34a1c34f92a7aea90fd38e4ce5")
 OPENROUTE_BASE_URL = "https://api.openrouteservice.org/v2/directions/driving-car"
 
+# Alternative: Use OSRM (free, no API key needed)
+OSRM_BASE_URL = "http://router.project-osrm.org/route/v1/driving"
+
 
 async def calculate_safe_route(db: Session, request: schemas.SafeRouteRequest) -> schemas.SafeRouteResponse:
     """
@@ -59,6 +62,104 @@ def _is_near_route_corridor(lat: float, lng: float, request: schemas.SafeRouteRe
 
 
 async def _get_route_from_service(
+    request: schemas.SafeRouteRequest,
+    crime_zones: List[dict]
+) -> Optional[schemas.SafeRouteResponse]:
+    """
+    Get real road-based route using OSRM (free, no API key needed)
+    Fallback to OpenRouteService if needed
+    """
+    try:
+        # Try OSRM first (free, no API key, more reliable)
+        route_data = await _get_route_from_osrm(request)
+        if route_data:
+            # Add crime zone analysis
+            crime_hotspots = _cluster_crime_zones(crime_zones, request.avoid_crime_radius_km) if crime_zones else []
+            route_data.avoided_crime_zones = len(crime_hotspots)
+            # Adjust safety score based on crime zones
+            if crime_hotspots:
+                route_data.safety_score = min(100, 70 + (len(crime_hotspots) * 5))
+            return route_data
+        
+    except Exception as e:
+        print(f"OSRM routing failed: {e}")
+    
+    try:
+        # Fallback to OpenRouteService
+        return await _get_route_from_openroute(request, crime_zones)
+    except Exception as e:
+        print(f"OpenRouteService failed: {e}")
+        return None
+
+
+async def _get_route_from_osrm(
+    request: schemas.SafeRouteRequest
+) -> Optional[schemas.SafeRouteResponse]:
+    """
+    Get route from OSRM (Open Source Routing Machine)
+    Free service, no API key required
+    """
+    try:
+        # OSRM format: /route/v1/driving/{lon},{lat};{lon},{lat}
+        url = f"{OSRM_BASE_URL}/{request.start_lng},{request.start_lat};{request.end_lng},{request.end_lat}"
+        
+        params = {
+            "overview": "full",
+            "geometries": "geojson",
+            "steps": "false"
+        }
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, params=params)
+            
+            if response.status_code != 200:
+                print(f"OSRM error: {response.status_code}")
+                return None
+            
+            data = response.json()
+            
+            if data.get("code") != "Ok":
+                print(f"OSRM routing error: {data.get('code')}")
+                return None
+            
+            # Extract route information
+            route = data["routes"][0]
+            geometry = route["geometry"]
+            
+            # Convert coordinates from [lng, lat] to [lat, lng]
+            coordinates = geometry["coordinates"]
+            route_points = [[coord[1], coord[0]] for coord in coordinates]
+            
+            # Extract distance and duration
+            distance_km = route["distance"] / 1000  # meters to km
+            duration_minutes = route["duration"] / 60  # seconds to minutes
+            
+            return schemas.SafeRouteResponse(
+                route=route_points,
+                distance_km=round(distance_km, 2),
+                duration_minutes=round(duration_minutes, 1),
+                safety_score=70.0,  # Base score, will be adjusted based on crimes
+                avoided_crime_zones=0,  # Will be updated by caller
+                waypoints=[
+                    {
+                        "lat": request.start_lat,
+                        "lng": request.start_lng,
+                        "type": "start"
+                    },
+                    {
+                        "lat": request.end_lat,
+                        "lng": request.end_lng,
+                        "type": "end"
+                    }
+                ]
+            )
+            
+    except Exception as e:
+        print(f"Error fetching route from OSRM: {e}")
+        return None
+
+
+async def _get_route_from_openroute(
     request: schemas.SafeRouteRequest,
     crime_zones: List[dict]
 ) -> Optional[schemas.SafeRouteResponse]:
