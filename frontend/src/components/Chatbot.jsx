@@ -121,32 +121,33 @@ function Chatbot({ onClose }) {
               </div>
             </div>
           )}
+
+          {showFAQ && (
+            <div className="faq-section-inline">
+              <div className="faq-header">
+                <h4>📚 Frequently Asked Questions</h4>
+                <p>Click any question to see the answer</p>
+              </div>
+              <div className="faq-list">
+                {faqs.map((faq, idx) => (
+                  <button
+                    key={idx}
+                    className="faq-btn"
+                    onClick={() => handleFAQClick(faq)}
+                  >
+                    <span className="faq-icon">Q:</span>
+                    {faq.q}
+                  </button>
+                ))}
+              </div>
+              <button className="hide-faq-btn" onClick={() => setShowFAQ(false)}>
+                Hide FAQs
+              </button>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
-
-        {showFAQ && (
-          <div className="quick-questions faq-section">
-            <div className="faq-header">
-              <h4>📚 Frequently Asked Questions</h4>
-              <p>Click any question to see the answer</p>
-            </div>
-            <div className="faq-list">
-              {faqs.map((faq, idx) => (
-                <button
-                  key={idx}
-                  className="faq-btn"
-                  onClick={() => handleFAQClick(faq)}
-                >
-                  <span className="faq-icon">Q:</span>
-                  {faq.q}
-                </button>
-              ))}
-            </div>
-            <button className="hide-faq-btn" onClick={() => setShowFAQ(false)}>
-              Hide FAQs
-            </button>
-          </div>
-        )}
 
         <div className="chatbot-input">
           <textarea

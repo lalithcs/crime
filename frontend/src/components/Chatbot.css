@@ -109,6 +109,14 @@
   }
 }
 
+.faq-section-inline {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .quick-questions {
   padding: 0 1.5rem 1rem;
   background: #f7fafc;
