@@ -222,17 +222,6 @@ function ReportForm({ onClose }) {
           </div>
 
           <div className="form-group">
-            <label>Location Description</label>
-            <input
-              type="text"
-              name="location_description"
-              value={formData.location_description}
-              onChange={handleChange}
-              placeholder="e.g., Street corner, Park, Store"
-            />
-          </div>
-
-          <div className="form-group">
             <label>Location *</label>
             <select
               className="location-select"
@@ -246,6 +235,17 @@ function ReportForm({ onClose }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="form-group">
+            <label>Location Description (Auto-filled from GPS)</label>
+            <input
+              type="text"
+              name="location_description"
+              value={formData.location_description}
+              onChange={handleChange}
+              placeholder="e.g., Starbucks Coffee, Road No 36, Jubilee Hills"
+            />
           </div>
 
           <button
