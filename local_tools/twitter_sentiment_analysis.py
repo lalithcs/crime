@@ -17,19 +17,25 @@ TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET", "")
 TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN", "")
 TWITTER_ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET", "")
 
-# Hyderabad areas with coordinates
-HYDERABAD_AREAS = {
-    "Madhapur": {"lat": 17.450, "lng": 78.390, "radius_km": 2},
-    "Gachibowli": {"lat": 17.440, "lng": 78.355, "radius_km": 2},
-    "Hitech City": {"lat": 17.450, "lng": 78.380, "radius_km": 2},
-    "Begumpet": {"lat": 17.445, "lng": 78.468, "radius_km": 2},
-    "Secunderabad": {"lat": 17.440, "lng": 78.503, "radius_km": 2},
-    "Banjara Hills": {"lat": 17.418, "lng": 78.448, "radius_km": 2},
-    "Kukatpally": {"lat": 17.493, "lng": 78.398, "radius_km": 2},
-    "LB Nagar": {"lat": 17.343, "lng": 78.553, "radius_km": 2},
-    "Dilsukhnagar": {"lat": 17.373, "lng": 78.528, "radius_km": 2},
-    "Charminar": {"lat": 17.363, "lng": 78.473, "radius_km": 2},
+# Hyderabad areas with coordinates (LIMITED TO 2 AREAS FOR TESTING)
+TEST_AREAS = {
+    "Madhapur": {"lat": 17.4485, "lng": 78.3908, "radius_km": 2},
+    "Malkajgiri": {"lat": 17.4474, "lng": 78.5268, "radius_km": 2},
 }
+
+# Full list (uncomment to test all areas)
+# HYDERABAD_AREAS = {
+#     "Madhapur": {"lat": 17.450, "lng": 78.390, "radius_km": 2},
+#     "Gachibowli": {"lat": 17.440, "lng": 78.355, "radius_km": 2},
+#     "Hitech City": {"lat": 17.450, "lng": 78.380, "radius_km": 2},
+#     "Begumpet": {"lat": 17.445, "lng": 78.468, "radius_km": 2},
+#     "Secunderabad": {"lat": 17.440, "lng": 78.503, "radius_km": 2},
+#     "Banjara Hills": {"lat": 17.418, "lng": 78.448, "radius_km": 2},
+#     "Kukatpally": {"lat": 17.493, "lng": 78.398, "radius_km": 2},
+#     "LB Nagar": {"lat": 17.343, "lng": 78.553, "radius_km": 2},
+#     "Dilsukhnagar": {"lat": 17.373, "lng": 78.528, "radius_km": 2},
+#     "Charminar": {"lat": 17.363, "lng": 78.473, "radius_km": 2},
+# }
 
 # Crime-related keywords to filter tweets
 CRIME_KEYWORDS = [
@@ -55,7 +61,7 @@ def authenticate_twitter():
 
 
 def fetch_area_tweets(api, area_name, area_data, days_back=7):
-    """Fetch tweets from a specific area"""
+    """Fetch tweets from a specific area (limited to 50 tweets for testing)"""
     print(f"\nFetching tweets for {area_name}...")
     
     # Create geocode query (lat,lng,radius)
@@ -72,8 +78,8 @@ def fetch_area_tweets(api, area_name, area_data, days_back=7):
             geocode=geocode,
             lang="en",
             tweet_mode="extended",
-            count=100
-        ).items(200):  # Fetch up to 200 tweets
+            count=50  # Reduced from 100 for testing
+        ).items(50):  # Reduced from 200 to 50 for minimal requests
             
             # Filter by date
             if tweet.created_at > datetime.now() - timedelta(days=days_back):
@@ -235,9 +241,9 @@ def main():
         print("   TWITTER_ACCESS_SECRET=your_access_secret")
         return
     
-    # Fetch tweets from all areas
+    # Fetch tweets from all areas (TESTING: Only 2 areas)
     all_tweets = []
-    for area_name, area_data in HYDERABAD_AREAS.items():
+    for area_name, area_data in TEST_AREAS.items():
         tweets = fetch_area_tweets(api, area_name, area_data, days_back=7)
         all_tweets.extend(tweets)
     

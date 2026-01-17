@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { X, MapPin, Camera } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
 import { ALL_LOCATIONS } from '../constants/locations';
 import './ReportForm.css';
 

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-le
 import L from 'leaflet';
 import { crimesAPI, reportsAPI, causesAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { MapPin, AlertTriangle, Construction, Lightbulb } from 'lucide-react';
+import { AlertTriangle, Construction, Lightbulb } from 'lucide-react';
 import './CrimeMap.css';
 
 // Fix Leaflet default marker icons
@@ -40,7 +40,6 @@ const reportIcon = new L.Icon({
 });
 
 function WebSocketHandler({ onNewReport }) {
-  const map = useMap();
   const wsRef = useRef(null);
 
   useEffect(() => {
@@ -100,6 +99,7 @@ function CrimeMap() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.crimeType, filters.days]);
 
   const loadData = async () => {
