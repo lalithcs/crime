@@ -61,9 +61,9 @@ function RoutePlanner() {
           toast.loading('Getting location name...');
           
           try {
-            // Reverse geocode to get location name
+            // Reverse geocode to get location name with building details
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=19&addressdetails=1&extratags=1&namedetails=1`,
               {
                 headers: {
                   'User-Agent': 'CrimeScope/1.0'
@@ -72,14 +72,39 @@ function RoutePlanner() {
             );
             const data = await response.json();
             
-            // Extract meaningful location info
+            // Extract meaningful location info with building/POI priority
             const address = data.address || {};
-            const locationParts = [
-              address.road || address.neighbourhood,
-              address.suburb || address.city_district
-            ].filter(Boolean);
             
-            const locationName = locationParts.join(', ') || data.display_name?.split(',').slice(0, 2).join(',') || `GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+            // Priority: Building name > Shop/Amenity > Road > Area
+            const buildingName = data.namedetails?.name || 
+                               data.extratags?.building || 
+                               address.building || 
+                               address.shop || 
+                               address.amenity || 
+                               address.tourism || 
+                               address.office || 
+                               address.commercial;
+            
+            const locationParts = [];
+            
+            // Add building/POI name if available
+            if (buildingName && buildingName !== address.road) {
+              locationParts.push(buildingName);
+            }
+            
+            // Add road/street or neighbourhood
+            if (address.road) {
+              locationParts.push(address.road);
+            } else if (address.neighbourhood) {
+              locationParts.push(address.neighbourhood);
+            }
+            
+            // Add area
+            if (address.suburb || address.city_district) {
+              locationParts.push(address.suburb || address.city_district);
+            }
+            
+            const locationName = locationParts.slice(0, 2).join(', ') || data.display_name?.split(',').slice(0, 2).join(',') || `GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
             
             if (type === 'start') {
               setSelectedStartLocation(`📍 ${locationName.substring(0, 40)}`);
