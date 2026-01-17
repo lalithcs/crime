@@ -39,6 +39,20 @@ const reportIcon = new L.Icon({
   popupAnchor: [1, -34],
 });
 
+const userLocationIcon = new L.Icon({
+  iconUrl: 'data:image/svg+xml;base64=' + btoa(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+      <circle fill="#4299e1" cx="15" cy="15" r="15" opacity="0.3"/>
+      <circle fill="#2b6cb0" cx="15" cy="15" r="10"/>
+      <circle fill="white" cx="15" cy="15" r="5"/>
+      <circle fill="#2b6cb0" cx="15" cy="15" r="3"/>
+    </svg>
+  `),
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+  popupAnchor: [0, -15],
+});
+
 function WebSocketHandler({ onNewReport }) {
   const wsRef = useRef(null);
 
@@ -83,7 +97,7 @@ function WebSocketHandler({ onNewReport }) {
   return null;
 }
 
-function CrimeMap() {
+function CrimeMap({ userLocation }) {
   const [crimes, setCrimes] = useState([]);
   const [reports, setReports] = useState([]);
   const [environmentalFactors, setEnvironmentalFactors] = useState([]);
@@ -218,6 +232,37 @@ function CrimeMap() {
             </Marker>
           )
         ))}
+
+        {/* Render User's Current Location */}
+        {userLocation && (
+          <>
+            <Marker
+              position={[userLocation.lat, userLocation.lng]}
+              icon={userLocationIcon}
+            >
+              <Popup>
+                <div className="popup-content">
+                  <h3>📍 Your Location</h3>
+                  <p><strong>{userLocation.name}</strong></p>
+                  <p>Accuracy: ±{userLocation.accuracy?.toFixed(0) || 0}m</p>
+                  <p className="text-sm">
+                    {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+            <Circle
+              center={[userLocation.lat, userLocation.lng]}
+              radius={userLocation.accuracy || 50}
+              pathOptions={{
+                color: '#4299e1',
+                fillColor: '#4299e1',
+                fillOpacity: 0.1,
+                weight: 2,
+              }}
+            />
+          </>
+        )}
 
         {/* Render Environmental Factors */}
         {filters.showFactors && environmentalFactors.map((factor) => (

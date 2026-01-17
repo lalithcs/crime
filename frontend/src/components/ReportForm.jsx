@@ -5,7 +5,7 @@ import { X, MapPin } from 'lucide-react';
 import { ALL_LOCATIONS } from '../constants/locations';
 import './ReportForm.css';
 
-function ReportForm({ onClose }) {
+function ReportForm({ onClose, onLocationUpdate }) {
   const [selectedLocation, setSelectedLocation] = useState(ALL_LOCATIONS[0].name);
   const [formData, setFormData] = useState({
     user_id: 'user_' + Math.random().toString(36).substr(2, 9),
@@ -119,6 +119,16 @@ function ReportForm({ onClose }) {
               longitude: lng,
               location_description: locationName,
             });
+            
+            // Update parent component with user's location for map marker
+            if (onLocationUpdate) {
+              onLocationUpdate({
+                lat,
+                lng,
+                name: locationName,
+                accuracy
+              });
+            }
             
             toast.dismiss();
             toast.success(`Location: ${locationName.substring(0, 40)}... (±${accuracy.toFixed(0)}m)`, { duration: 4000 });

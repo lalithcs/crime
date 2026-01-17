@@ -13,6 +13,11 @@ function App() {
   const [activeTab, setActiveTab] = useState('map');
   const [showReportForm, setShowReportForm] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  const handleLocationUpdate = (location) => {
+    setUserLocation(location);
+  };
 
   return (
     <div className="app">
@@ -63,7 +68,7 @@ function App() {
 
       {/* Main Content */}
       <main className="main-content">
-        {activeTab === 'map' && <CrimeMap />}
+        {activeTab === 'map' && <CrimeMap userLocation={userLocation} />}
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'route' && <RoutePlanner />}
       </main>
@@ -81,7 +86,10 @@ function App() {
 
       {/* Modals */}
       {showReportForm && (
-        <ReportForm onClose={() => setShowReportForm(false)} />
+        <ReportForm 
+          onClose={() => setShowReportForm(false)} 
+          onLocationUpdate={handleLocationUpdate}
+        />
       )}
       {showChatbot && (
         <Chatbot onClose={() => setShowChatbot(false)} />
