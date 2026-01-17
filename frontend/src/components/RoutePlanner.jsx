@@ -49,6 +49,104 @@ function RoutePlanner() {
     });
   };
 
+  const handleGetCurrentLocation = (type) => {
+    if (navigator.geolocation) {
+      toast.loading('Getting your location...');
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+          
+          toast.loading('Getting location name...');
+          
+          try {
+            // Reverse geocode to get location name
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+              {
+                headers: {
+                  'User-Agent': 'CrimeScope/1.0'
+                }
+              }
+            );
+            const data = await response.json();
+            
+            // Extract meaningful location info
+            const address = data.address || {};
+            const locationParts = [
+              address.road || address.neighbourhood,
+              address.suburb || address.city_district
+            ].filter(Boolean);
+            
+            const locationName = locationParts.join(', ') || data.display_name?.split(',').slice(0, 2).join(',') || `GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+            
+            if (type === 'start') {
+              setSelectedStartLocation(`📍 ${locationName.substring(0, 40)}`);
+              setFormData({
+                ...formData,
+                start_lat: lat,
+                start_lng: lng,
+              });
+            } else {
+              setSelectedEndLocation(`📍 ${locationName.substring(0, 40)}`);
+              setFormData({
+                ...formData,
+                end_lat: lat,
+                end_lng: lng,
+              });
+            }
+            
+            toast.dismiss();
+            toast.success(`${type === 'start' ? 'Start' : 'Destination'}: ${locationName.substring(0, 35)}...`, { duration: 3000 });
+          } catch (error) {
+            console.error('Geocoding error:', error);
+            // Fallback to coordinates if geocoding fails
+            const locationName = `My Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+            
+            if (type === 'start') {
+              setSelectedStartLocation(locationName);
+              setFormData({
+                ...formData,
+                start_lat: lat,
+                start_lng: lng,
+              });
+            } else {
+              setSelectedEndLocation(locationName);
+              setFormData({
+                ...formData,
+                end_lat: lat,
+                end_lng: lng,
+              });
+            }
+            
+            toast.dismiss();
+            toast.success(`${type === 'start' ? 'Start' : 'End'} location set! Accuracy: ${accuracy.toFixed(0)}m`);
+          }
+        },
+        (error) => {
+          toast.dismiss();
+          if (error.code === error.PERMISSION_DENIED) {
+            toast.error('Location permission denied');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            toast.error('Location unavailable');
+          } else if (error.code === error.TIMEOUT) {
+            toast.error('Location request timed out');
+          } else {
+            toast.error('Could not get location');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      toast.error('Geolocation not supported by browser');
+    }
+  };
+
   const handleCalculateRoute = async () => {
     setLoading(true);
     try {
@@ -79,48 +177,7 @@ function RoutePlanner() {
   };
 
   const handleUseCurrentLocation = (field) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          
-          // Find nearest predefined location
-          let nearestLocation = ALL_LOCATIONS[0];
-          let minDistance = Infinity;
-          
-          ALL_LOCATIONS.forEach(loc => {
-            const distance = Math.sqrt(
-              Math.pow(loc.lat - lat, 2) + Math.pow(loc.lng - lng, 2)
-            );
-            if (distance < minDistance) {
-              minDistance = distance;
-              nearestLocation = loc;
-            }
-          });
-          
-          if (field === 'start') {
-            setSelectedStartLocation(nearestLocation.name);
-            setFormData({
-              ...formData,
-              start_lat: nearestLocation.lat,
-              start_lng: nearestLocation.lng,
-            });
-          } else {
-            setSelectedEndLocation(nearestLocation.name);
-            setFormData({
-              ...formData,
-              end_lat: nearestLocation.lat,
-              end_lng: nearestLocation.lng,
-            });
-          }
-          toast.success(`Nearest location: ${nearestLocation.name}`);
-        },
-        (error) => {
-          toast.error('Could not get location');
-        }
-      );
-    }
+    handleGetCurrentLocation(field);
   };
 
   return (

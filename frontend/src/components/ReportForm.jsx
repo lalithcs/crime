@@ -50,43 +50,84 @@ function ReportForm({ onClose }) {
     }
   };
 
-  const handleLocationClick = () => {
+  const handleLocationClick = async () => {
     if (navigator.geolocation) {
       toast.loading('Getting your location...');
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          toast.dismiss();
+        async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
           
-          // Find nearest predefined location
-          let nearestLocation = ALL_LOCATIONS[0];
-          let minDistance = Infinity;
+          toast.loading('Getting location name...');
           
-          ALL_LOCATIONS.forEach(loc => {
-            const distance = Math.sqrt(
-              Math.pow(loc.lat - lat, 2) + Math.pow(loc.lng - lng, 2)
+          try {
+            // Reverse geocode to get location name
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+              {
+                headers: {
+                  'User-Agent': 'CrimeScope/1.0'
+                }
+              }
             );
-            if (distance < minDistance) {
-              minDistance = distance;
-              nearestLocation = loc;
-            }
-          });
-          
-          setSelectedLocation(nearestLocation.name);
-          setFormData({
-            ...formData,
-            latitude: nearestLocation.lat,
-            longitude: nearestLocation.lng,
-            location_description: nearestLocation.name,
-          });
-          toast.success(`Nearest location: ${nearestLocation.name}`);
+            const data = await response.json();
+            
+            // Extract meaningful location info
+            const address = data.address || {};
+            const locationParts = [
+              address.road || address.neighbourhood,
+              address.suburb || address.city_district,
+              address.city || address.town || address.village
+            ].filter(Boolean);
+            
+            const locationName = locationParts.join(', ') || data.display_name?.split(',').slice(0, 2).join(',') || 'Unknown Location';
+            
+            setSelectedLocation(`📍 ${locationName.substring(0, 50)}`);
+            setFormData({
+              ...formData,
+              latitude: lat,
+              longitude: lng,
+              location_description: locationName,
+            });
+            
+            toast.dismiss();
+            toast.success(`Location: ${locationName.substring(0, 40)}... (±${accuracy.toFixed(0)}m)`, { duration: 4000 });
+          } catch (error) {
+            console.error('Geocoding error:', error);
+            // Fallback to coordinates if geocoding fails
+            const fallbackName = `GPS Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+            setSelectedLocation(fallbackName);
+            setFormData({
+              ...formData,
+              latitude: lat,
+              longitude: lng,
+              location_description: `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+            });
+            toast.dismiss();
+            toast.success(`Location found! Accuracy: ${accuracy.toFixed(0)}m`);
+          }
         },
         (error) => {
           toast.dismiss();
-          toast.error('Could not get location');
+          if (error.code === error.PERMISSION_DENIED) {
+            toast.error('Location permission denied');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            toast.error('Location unavailable');
+          } else if (error.code === error.TIMEOUT) {
+            toast.error('Location request timed out');
+          } else {
+            toast.error('Could not get location');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
+    } else {
+      toast.error('Geolocation not supported by browser');
     }
   };
 
@@ -184,8 +225,14 @@ function ReportForm({ onClose }) {
             onClick={handleLocationClick}
           >
             <MapPin size={18} />
-            Use My Current Location (Nearest Area)
+            Use My Exact GPS Location
           </button>
+
+          <div className="coordinates-display">
+            <small>
+              Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+            </small>
+          </div>
 
           <div className="form-actions">
             <button type="button" onClick={onClose} className="btn-secondary">
