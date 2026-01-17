@@ -73,13 +73,18 @@ function ReportForm({ onClose, onLocationUpdate }) {
             );
             const data = await response.json();
             
-            // Extract meaningful location info with building/POI priority
+            // Extract meaningful location info with maximum detail
             const address = data.address || {};
+            const namedetails = data.namedetails || {};
+            const extratags = data.extratags || {};
             
-            // Priority: Building name > Shop/Amenity > Road > Area
-            const buildingName = data.namedetails?.name || 
-                               data.extratags?.building || 
-                               address.building || 
+            // Priority: Apartment/Building name > House number + Road > Shop > Area
+            const buildingName = namedetails.name || 
+                               data.name || 
+                               extratags['addr:housename'] ||
+                               extratags.building ||
+                               address.building ||
+                               address.house ||
                                address.shop || 
                                address.amenity || 
                                address.tourism || 
@@ -88,19 +93,21 @@ function ReportForm({ onClose, onLocationUpdate }) {
             
             const locationParts = [];
             
-            // Add building/POI name if available
-            if (buildingName && buildingName !== address.road) {
+            // Add specific building/apartment name if available
+            if (buildingName && buildingName !== address.road && buildingName.length > 2) {
               locationParts.push(buildingName);
             }
             
-            // Add road/street
-            if (address.road) {
+            // Add house number + road combination for specific address
+            if (address.house_number && address.road) {
+              locationParts.push(`${address.house_number} ${address.road}`);
+            } else if (address.road) {
               locationParts.push(address.road);
             } else if (address.neighbourhood) {
               locationParts.push(address.neighbourhood);
             }
             
-            // Add area/suburb
+            // Add suburb/area
             if (address.suburb || address.city_district) {
               locationParts.push(address.suburb || address.city_district);
             }
